@@ -7,8 +7,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Vehicle Rental Management System"
     API_V1_PREFIX: str = ""
+    SECRET_KEY: str = "super-secret-jwt-token-key-change-in-production"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     DATABASE_URL: str = "sqlite:///./rental.db"
     CORS_ORIGINS: Union[List[str], str] = ["*"]
+    LOGIN_RATE_LIMIT_PER_MINUTE: int = 10
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
