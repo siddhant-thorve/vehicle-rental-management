@@ -15,6 +15,16 @@ class NotFoundException(AppException):
         super().__init__(message=message, code=code, status_code=404)
 
 
+class UnauthorizedException(AppException):
+    def __init__(self, message: str = "Could not validate credentials", code: str = "UNAUTHORIZED"):
+        super().__init__(message=message, code=code, status_code=401)
+
+
+class ForbiddenException(AppException):
+    def __init__(self, message: str = "Operation not permitted", code: str = "FORBIDDEN"):
+        super().__init__(message=message, code=code, status_code=403)
+
+
 class ConflictException(AppException):
     def __init__(self, message: str = "Resource conflict detected", code: str = "CONFLICT"):
         super().__init__(message=message, code=code, status_code=409)
