@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 import logging
 
 from app.models.branch import Branch
-from app.schemas.branch import BranchCreate
+from app.schemas.branch import BranchCreate, BranchUpdate
 from app.repositories.branch_repo import BranchRepository
+from app.exceptions import NotFoundException
 
 logger = logging.getLogger("branch_audit")
 
@@ -22,6 +23,27 @@ class BranchService:
         created = BranchRepository.create(db, branch)
         logger.info(f"AUDIT: Branch created with ID {created.id}")
         return created
+
+    @staticmethod
+    def update_branch(db: Session, branch_id: int, req: BranchUpdate) -> Branch:
+        branch = BranchRepository.get_by_id(db, branch_id)
+        if not branch:
+            raise NotFoundException(f"Branch with ID {branch_id} not found")
+
+        update_data = req.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(branch, field, value)
+
+        updated = BranchRepository.update(db, branch)
+        logger.info(f"AUDIT: Branch ID {branch_id} updated")
+        return updated
+
+    @staticmethod
+    def get_branch(db: Session, branch_id: int) -> Branch:
+        branch = BranchRepository.get_by_id(db, branch_id)
+        if not branch:
+            raise NotFoundException(f"Branch with ID {branch_id} not found")
+        return branch
 
     @staticmethod
     def list_branches(

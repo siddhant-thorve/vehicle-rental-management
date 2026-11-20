@@ -3,9 +3,10 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.branch import BranchCreate, BranchResponse
+from app.schemas.branch import BranchCreate, BranchUpdate, BranchResponse
 from app.schemas.common import PaginatedResponse
 from app.services.branch_service import BranchService
+from app.core.security import require_role
 
 router = APIRouter(prefix="/branches", tags=["Branches"])
 
@@ -14,6 +15,7 @@ router = APIRouter(prefix="/branches", tags=["Branches"])
 def create_branch(
     req: BranchCreate,
     db: Session = Depends(get_db),
+    _admin=Depends(require_role("ADMIN")),
 ):
     return BranchService.create_branch(db, req)
 
@@ -38,3 +40,18 @@ def list_branches(
         sort_dir=sort_dir,
     )
     return PaginatedResponse(items=items, total=total, page=page, size=size)
+
+
+@router.get("/{id}", response_model=BranchResponse)
+def get_branch(id: int, db: Session = Depends(get_db)):
+    return BranchService.get_branch(db, id)
+
+
+@router.patch("/{id}", response_model=BranchResponse)
+def update_branch(
+    id: int,
+    req: BranchUpdate,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_role("ADMIN")),
+):
+    return BranchService.update_branch(db, id, req)
