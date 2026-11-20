@@ -36,3 +36,4 @@ class Vehicle(Base, TimestampMixin):
     # Relationships
     category = relationship("VehicleCategory", back_populates="vehicles")
     branch = relationship("Branch", back_populates="vehicles")
+    bookings = relationship("Booking", back_populates="vehicle")
