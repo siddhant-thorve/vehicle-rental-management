@@ -1,28 +1,21 @@
-import logging
-
 from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-
+from sqlalchemy import text
 from app.db.session import get_db
-from app.schemas.health import HealthResponse
 
-
-logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Health"])
 
 
-@router.get("/health", response_model=HealthResponse)
-def health_check(db: Session = Depends(get_db)) -> HealthResponse | JSONResponse:
+@router.get("/health")
+def health_check(db: Session = Depends(get_db)):
+    db_status = "connected"
     try:
         db.execute(text("SELECT 1"))
-    except SQLAlchemyError:
-        logger.warning("Database health check failed")
-        return JSONResponse(
-            status_code=503,
-            content={"service": "UP", "database": "DOWN"},
-        )
+    except Exception as e:
+        db_status = f"unhealthy: {str(e)}"
 
-    return HealthResponse(service="UP", database="UP")
+    return {
+        "status": "ok" if db_status == "connected" else "degraded",
+        "service": "vehicle-rental-management-system",
+        "database": db_status,
+    }
