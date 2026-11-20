@@ -1,0 +1,92 @@
+VEHICLE RENTAL MANAGEMENT - MEMBER 2 (API, DOCS, CLEANUP)
+Repository: C:\case_study\vehicle-rental-management
+Existing branch: feature-db-design
+
+OWNERSHIP / CURRENT STATUS
+Per the team update, Member 2 has completed and pushed the API, schema, documentation, seed, requests, cleanup, and initial-stage test updates to feature-db-design. Do not redo this work and do not copy later-stage modules from project_40_percent.
+
+Member 2 owns:
+  app\main.py
+  app\exceptions.py
+  app\routers\branches.py
+  app\routers\customers.py
+  app\routers\health.py
+  app\routers\tariffs.py
+  app\routers\vehicle_categories.py
+  app\routers\vehicles.py
+  app\routers\__init__.py
+  app\schemas\branch.py
+  app\schemas\common.py
+  app\schemas\user.py
+  app\schemas\vehicle.py
+  app\schemas\tariff.py
+  app\schemas\__init__.py
+  app\services\branch_service.py
+  app\services\customer_service.py
+  app\services\vehicle_service.py
+  app\services\tariff_service.py
+  app\services\__init__.py
+  README.md
+  seed.py
+  requests.http
+  SWAGGER_DATA_CHEAT_SHEET.md
+  relevant tests under tests\
+
+The requested cleanup is part of this branch's final state. Do not retain or restore:
+  app\core\security.py
+  an /auth router or old login/security code
+  later-stage booking/availability/rental/invoice/report API modules
+Do not copy these from project_40_percent or any other older snapshot. Remove stale tests that depend on removed endpoints, replacing them with tests for the agreed initial-stage API. Keep the health endpoint.
+
+FILE DESTINATION / STAGE CHECKLIST
+The paths above are repository-root-relative destinations in C:\case_study\vehicle-rental-management. Before merge, verify the pushed feature-db-design tree contains the requested final API/docs files, has no prohibited later-stage/auth modules, and does not accidentally remove Member 1's foundation or migration files.
+
+SEQUENCE: WAIT FOR MEMBER 1'S FOUNDATION PR, THEN UPDATE YOUR BRANCH
+
+Member 1 must first commit/push outstanding foundation changes on feature-foundation and merge that PR into dev. The clone previously showed Member 1's local uncommitted changes; do not switch branches or stage those files as Member 2.
+
+After Member 1 confirms the foundation PR is merged:
+   Set-Location 'C:\case_study\vehicle-rental-management'
+   git status --short --branch
+   git fetch origin
+   git switch feature-db-design
+   git pull --ff-only origin feature-db-design
+   git merge origin/dev
+
+Resolve conflicts by preserving both the completed API/docs cleanup and the foundation. Review especially:
+  app\main.py
+  app\exceptions.py
+  app\core\config.py
+  app\db\
+  app\models\
+  app\routers\__init__.py
+  requirements.txt
+  .env.example
+  alembic.ini
+  alembic\
+
+The API registration in app\main.py must match the initial-stage scope. Do not restore /auth or later-stage routers while resolving conflicts. Keep working migration configuration and foundation modules; coordinate with Member 1 rather than deleting them.
+
+Run the updated initial-stage tests and inspect OpenAPI at /openapi.json or /docs. Confirm only agreed initial-stage routes are registered, removed routes are no longer asserted by stale tests, and setup/seed instructions match the code.
+
+Commit only any conflict resolutions or final corrections that Member 2 owns:
+   git status --short
+   git diff
+   git add <explicit reviewed paths>
+   git commit -m "chore(api): integrate initial-stage API with foundation"
+   git push origin feature-db-design
+
+Open or update the GitHub PR:
+  Base: dev
+  Compare: feature-db-design
+  Title: Complete initial-stage API, docs, and cleanup
+Review the PR diff. It should include Member 2's API/doc/cleanup work and required merge resolutions, not unreviewed Member 1 files. Merge only after tests pass.
+
+AFTER MERGE
+   git fetch origin
+   git switch dev
+   git pull --ff-only origin dev
+Verify the combined dev application can start, its migrations and seed instructions are valid, and tests pass. Do not merge directly to main; release from dev only at the team's agreed checkpoint.
+
+SAFETY
+Never run git reset --hard, git clean, or force-push. Do not use git add . in the shared clone. Never commit .env, credentials, generated caches, or virtual environments. If another member's changes block switching branches, stop and coordinate instead of discarding them.
