@@ -7,14 +7,21 @@ from fastapi.exceptions import RequestValidationError
 from app.core.config import settings
 from app.exceptions import AppException
 from app.routers import (
-    health_router,
+    auth_router,
+    customers_router,
     branches_router,
     categories_router,
     vehicles_router,
     tariffs_router,
-    customers_router,
+    availability_router,
+    bookings_router,
+    rentals_router,
+    invoices_router,
+    reports_router,
+    health_router,
 )
 
+# Configure structured audit logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -22,8 +29,8 @@ logging.basicConfig(
 logger = logging.getLogger("app.main")
 
 app = FastAPI(
-    title=f"{settings.PROJECT_NAME} - Initial Stage",
-    description="Initial public API for customers, branches, vehicle categories, vehicles, and tariffs.",
+    title=settings.PROJECT_NAME,
+    description="Vehicle Rental Management System REST API",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -52,6 +59,7 @@ async def app_exception_handler(request: Request, exc: AppException):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     errors = exc.errors()
+    # Format readable error message
     error_msg = "; ".join([f"{'.'.join(map(str, err['loc']))}: {err['msg']}" for err in errors])
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -68,10 +76,26 @@ async def generic_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Only the initial-stage endpoints are enabled.
+# Router registrations
 app.include_router(health_router)
+app.include_router(auth_router)
 app.include_router(customers_router)
 app.include_router(branches_router)
 app.include_router(categories_router)
 app.include_router(vehicles_router)
 app.include_router(tariffs_router)
+app.include_router(availability_router)
+app.include_router(bookings_router)
+app.include_router(rentals_router)
+app.include_router(invoices_router)
+app.include_router(reports_router)
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return {
+        "project": settings.PROJECT_NAME,
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "health": "/health",
+    }

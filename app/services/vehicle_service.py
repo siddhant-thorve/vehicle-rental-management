@@ -1,12 +1,14 @@
+from datetime import datetime, timezone
 from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
 import logging
 
 from app.models.vehicle import VehicleCategory, Vehicle
-from app.schemas.vehicle import CategoryCreate, VehicleCreate, VehicleStatus
+from app.models.user import User
+from app.schemas.vehicle import CategoryCreate, VehicleCreate, VehicleStatusUpdate, VehicleStatus
 from app.repositories.vehicle_repo import VehicleRepository
 from app.repositories.branch_repo import BranchRepository
-from app.exceptions import NotFoundException, ConflictException
+from app.exceptions import NotFoundException, ConflictException, ForbiddenException, BadRequestException
 
 logger = logging.getLogger("vehicle_audit")
 
@@ -80,6 +82,26 @@ class VehicleService:
         return created
 
     @staticmethod
+    def update_vehicle_status(
+        db: Session,
+        vehicle_id: int,
+        req: VehicleStatusUpdate,
+        current_user: User,
+    ) -> Vehicle:
+        vehicle = VehicleRepository.get_vehicle_by_id(db, vehicle_id)
+        if not vehicle:
+            raise NotFoundException(f"Vehicle ID {vehicle_id} not found")
+
+        # Security check: Branch staff can only update vehicles belonging to their own branch
+        if current_user.role == "BRANCH_STAFF" and current_user.branch_id != vehicle.branch_id:
+            raise ForbiddenException("Branch staff can only update vehicles belonging to their branch")
+
+        vehicle.status = req.status.value
+        updated = VehicleRepository.update_vehicle(db, vehicle)
+        logger.info(f"AUDIT: Vehicle ID {vehicle_id} status changed to {vehicle.status} by User {current_user.id}")
+        return updated
+
+    @staticmethod
     def list_vehicles(
         db: Session,
         branch_id: Optional[int] = None,
@@ -102,4 +124,37 @@ class VehicleService:
             limit=size,
             sort_by=sort_by,
             sort_dir=sort_dir,
+        )
+
+    @staticmethod
+    def search_available_vehicles(
+        db: Session,
+        branch_id: int,
+        pickup_at: datetime,
+        drop_at: datetime,
+        category_id: Optional[int] = None,
+    ) -> List[Vehicle]:
+        now = datetime.now(timezone.utc)
+        if pickup_at.tzinfo is None:
+            pickup_at = pickup_at.replace(tzinfo=timezone.utc)
+        if drop_at.tzinfo is None:
+            drop_at = drop_at.replace(tzinfo=timezone.utc)
+
+        if pickup_at <= now:
+            raise BadRequestException("Pickup date-time must be in the future")
+
+        duration_hours = (drop_at - pickup_at).total_seconds() / 3600.0
+        if duration_hours < 4.0:
+            raise BadRequestException("Minimum rental duration is 4 hours")
+
+        branch = BranchRepository.get_by_id(db, branch_id)
+        if not branch:
+            raise NotFoundException(f"Branch ID {branch_id} not found")
+
+        return VehicleRepository.get_available_vehicles(
+            db=db,
+            branch_id=branch_id,
+            category_id=category_id,
+            pickup_at=pickup_at,
+            drop_at=drop_at,
         )

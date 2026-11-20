@@ -15,4 +15,6 @@ class Branch(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Relationships
+    staff_members = relationship("User", back_populates="branch")
     vehicles = relationship("Vehicle", back_populates="branch")
+    bookings = relationship("Booking", back_populates="branch")

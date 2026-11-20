@@ -17,6 +17,12 @@ class BranchRepository:
         return branch
 
     @staticmethod
+    def update(db: Session, branch: Branch) -> Branch:
+        db.commit()
+        db.refresh(branch)
+        return branch
+
+    @staticmethod
     def list_branches(
         db: Session,
         city: Optional[str] = None,

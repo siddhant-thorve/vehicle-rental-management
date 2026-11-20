@@ -6,6 +6,7 @@ from app.db.session import get_db
 from app.schemas.vehicle import CategoryCreate, CategoryResponse
 from app.schemas.common import PaginatedResponse
 from app.services.vehicle_service import VehicleService
+from app.core.security import require_role
 
 router = APIRouter(prefix="/vehicle-categories", tags=["Vehicle Categories"])
 
@@ -14,6 +15,7 @@ router = APIRouter(prefix="/vehicle-categories", tags=["Vehicle Categories"])
 def create_category(
     req: CategoryCreate,
     db: Session = Depends(get_db),
+    _admin=Depends(require_role("ADMIN")),
 ):
     return VehicleService.create_category(db, req)
 
