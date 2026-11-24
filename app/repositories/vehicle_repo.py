@@ -1,6 +1,10 @@
+from datetime import datetime
 from typing import Optional, List, Tuple
-from sqlalchemy.orm import Session
+
 from sqlalchemy import select, func, desc, asc
+from sqlalchemy.orm import Session
+
+from app.models.booking import Booking
 from app.models.vehicle import VehicleCategory, Vehicle
 
 
@@ -52,8 +56,18 @@ class VehicleRepository:
         return db.scalars(stmt).first()
 
     @staticmethod
+    def get_vehicle_by_id(db: Session, vehicle_id: int) -> Optional[Vehicle]:
+        return db.get(Vehicle, vehicle_id)
+
+    @staticmethod
     def create_vehicle(db: Session, vehicle: Vehicle) -> Vehicle:
         db.add(vehicle)
+        db.commit()
+        db.refresh(vehicle)
+        return vehicle
+
+    @staticmethod
+    def update_vehicle(db: Session, vehicle: Vehicle) -> Vehicle:
         db.commit()
         db.refresh(vehicle)
         return vehicle
@@ -92,3 +106,32 @@ class VehicleRepository:
         total = db.scalar(count_stmt) or 0
         items = list(db.scalars(stmt.offset(skip).limit(limit)).all())
         return items, total
+
+    @staticmethod
+    def get_available_vehicles(
+        db: Session,
+        branch_id: int,
+        pickup_at: datetime,
+        drop_at: datetime,
+        category_id: Optional[int] = None,
+    ) -> List[Vehicle]:
+        overlapping_booking = (
+            select(Booking.id)
+            .where(
+                Booking.vehicle_id == Vehicle.id,
+                Booking.status.in_(["CONFIRMED", "IN_PROGRESS"]),
+                Booking.pickup_at < drop_at,
+                Booking.drop_at > pickup_at,
+            )
+            .exists()
+        )
+        stmt = select(Vehicle).where(
+            Vehicle.branch_id == branch_id,
+            Vehicle.status == "AVAILABLE",
+            Vehicle.is_active.is_(True),
+            ~overlapping_booking,
+        )
+        if category_id is not None:
+            stmt = stmt.where(Vehicle.category_id == category_id)
+
+        return list(db.scalars(stmt).all())

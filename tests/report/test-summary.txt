@@ -1,0 +1,24 @@
+Vehicle Rental Management - Test Report
+================================================
+Generated: 2026-11-24T04:29:57.944049+00:00
+
+TEST RESULT
+Collected: 44
+Passed: 44
+Failed: 0
+Skipped: 0
+Errors: 0
+Pass percentage: 100.00%
+Test status: PASS
+
+COVERAGE
+Line coverage: 85.76%
+Required coverage: 80.00%
+Coverage status: PASS
+
+OVERALL SCORE
+Score: 97.15%
+Formula: 80% test pass + 20% line coverage
+
+OVERALL STATUS
+PASS

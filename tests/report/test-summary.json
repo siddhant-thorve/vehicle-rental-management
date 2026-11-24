@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-11-24T04:29:57.944049+00:00",
+  "project": "vehicle-rental-management",
+  "test_result": {
+    "collected": 44,
+    "passed": 44,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "pass_percent": 100.0,
+    "status": "PASS"
+  },
+  "coverage": {
+    "line_percent": 85.76,
+    "required_percent": 80.0,
+    "status": "PASS"
+  },
+  "overall_score": {
+    "percent": 97.15,
+    "formula": "80% test pass + 20% line coverage"
+  },
+  "artifacts": {
+    "text": "test-summary.txt",
+    "json": "test-summary.json",
+    "coverage_json": "coverage.json",
+    "coverage_html": "coverage-html/index.html",
+    "junit_xml": "test-results.xml"
+  },
+  "overall_status": "PASS"
+}

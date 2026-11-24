@@ -135,6 +135,7 @@ pytest --cov=app --cov-report=term-missing tests/
 | `PATCH` | `/customers/{id}/verify-licence` | `BRANCH_STAFF` | Verify customer driving licence |
 | `POST` | `/branches` | `ADMIN` | Create a new branch |
 | `GET` | `/branches` | Public | List branches with city filter, sort, pagination |
+| `GET` | `/branches/{id}` | Public | Get branch details |
 | `PATCH` | `/branches/{id}` | `ADMIN` | Update branch address or contact details |
 | `POST` | `/vehicle-categories` | `ADMIN` | Create vehicle category (Hatchback, SUV, etc.) |
 | `GET` | `/vehicle-categories` | Public | List categories with pagination |
@@ -157,9 +158,190 @@ pytest --cov=app --cov-report=term-missing tests/
 | `GET` | `/reports/revenue` | `ADMIN` | Revenue report grouped by branch and category |
 | `GET` | `/health` | Public | Application & database connection health check |
 
+## 6. API Request Examples
+
+Replace path IDs with IDs returned by earlier requests or by the seed data. Send
+`Authorization: Bearer <access_token>` on protected endpoints, using a token for
+the role listed above. Endpoints listed as bodyless do not need a JSON body.
+
+### Authentication and customers
+
+`POST /auth/register` (public):
+```json
+{
+  "email": "new.customer@example.com",
+  "full_name": "Asha Sharma",
+  "phone": "9876543212",
+  "password": "Customer@123",
+  "licence_no": "MH0120260012345"
+}
+```
+
+`POST /auth/login` (public):
+```json
+{
+  "email": "customer.verified@rentalapp.com",
+  "password": "Customer@123"
+}
+```
+Use one of the demo-account passwords from the table above. The response
+contains the bearer token.
+
+`POST /auth/staff` (ADMIN):
+```json
+{
+  "email": "staff.pune@rentalapp.com",
+  "full_name": "Pune Branch Staff",
+  "phone": "9876543213",
+  "password": "Staff@123",
+  "branch_id": 1
+}
+```
+
+`PATCH /customers/4/verify-licence` (BRANCH_STAFF): no body.
+
+### Branches, categories, vehicles, and tariffs
+
+`POST /branches` (ADMIN):
+```json
+{
+  "name": "Pune City Branch",
+  "city": "Pune",
+  "address": "123 MG Road, Pune",
+  "contact_no": "9876543214"
+}
+```
+
+`PATCH /branches/1` (ADMIN; fields are optional):
+```json
+{
+  "address": "Updated address, Pune",
+  "contact_no": "9876543215"
+}
+```
+
+`POST /vehicle-categories` (ADMIN):
+```json
+{
+  "name": "Electric",
+  "description": "Electric passenger car",
+  "seating_capacity": 5
+}
+```
+
+`POST /vehicles` (ADMIN):
+```json
+{
+  "registration_no": "MH-12-AB-1234",
+  "category_id": 1,
+  "branch_id": 1,
+  "make": "Tata",
+  "model": "Nexon EV",
+  "fuel_type": "Electric",
+  "transmission": "Automatic",
+  "odometer_km": 12000
+}
+```
+
+`PATCH /vehicles/1/status` (BRANCH_STAFF):
+```json
+{
+  "status": "UNDER_MAINTENANCE"
+}
+```
+Allowed statuses: `AVAILABLE`, `BOOKED`, `UNDER_MAINTENANCE`, `RETIRED`.
+
+`POST /tariffs` (ADMIN):
+```json
+{
+  "category_id": 1,
+  "hourly_rate": 100,
+  "daily_rate": 1500,
+  "weekly_rate": 7000,
+  "free_km_per_day": 150,
+  "extra_km_rate": 10,
+  "extra_hour_rate": 120,
+  "deposit_amount": 3000,
+  "effective_from": "2026-01-01T00:00:00Z"
+}
+```
+
+### Availability, bookings, and rental lifecycle
+
+`GET /availability` (public; no body):
+```text
+/availability?branch_id=1&pickup_at=2026-12-10T10:00:00Z&drop_at=2026-12-10T15:00:00Z&category_id=1
+```
+Use an upcoming pickup and a rental duration of at least four hours.
+
+`POST /bookings/quote` (CUSTOMER):
+```json
+{
+  "category_id": 1,
+  "pickup_at": "2026-12-10T10:00:00Z",
+  "drop_at": "2026-12-10T15:00:00Z"
+}
+```
+
+`POST /bookings` (CUSTOMER; the customer must have a verified licence):
+```json
+{
+  "vehicle_id": 1,
+  "pickup_at": "2026-12-10T10:00:00Z",
+  "drop_at": "2026-12-10T15:00:00Z"
+}
+```
+Use a real, active vehicle ID and a time window with no overlapping booking.
+ISO-8601 timestamps with a timezone (for example, `Z`) are recommended.
+
+`POST /rentals/1/pickup` (BRANCH_STAFF):
+```json
+{
+  "odometer_out": 12000,
+  "fuel_out": 100
+}
+```
+
+`POST /rentals/1/return` (BRANCH_STAFF; `odometer_in` must be at least
+`odometer_out`):
+```json
+{
+  "odometer_in": 12125,
+  "fuel_in": 90,
+  "damage_notes": null,
+  "fuel_charge": 0,
+  "damage_charge": 0
+}
+```
+
+### Bodyless endpoints and query examples
+
+These endpoints do not accept a JSON request body:
+
+| Request | Example |
+|---|---|
+| `GET /` | `/` |
+| `GET /health` | `/health` |
+| `GET /branches` | `/branches?city=Mumbai&page=1&size=20` |
+| `GET /branches/{id}` | `/branches/1` |
+| `GET /vehicle-categories` | `/vehicle-categories?page=1&size=50` |
+| `GET /vehicles` | `/vehicles?branch_id=1&category_id=1&page=1&size=20` |
+| `GET /tariffs` | `/tariffs?category_id=1&page=1&size=20` |
+| `GET /bookings/me` (CUSTOMER) | `/bookings/me?page=1&size=20` |
+| `GET /bookings/branch` (BRANCH_STAFF) | `/bookings/branch?date=2026-12-10&page=1&size=20` |
+| `GET /bookings/{id}` | `/bookings/1` |
+| `PATCH /bookings/{id}/cancel` (CUSTOMER) | `/bookings/1/cancel` |
+| `GET /invoices/{rental_id}` | `/invoices/1` |
+| `GET /reports/utilisation` (ADMIN) | `/reports/utilisation?from=2026-12-01&to=2026-12-31` |
+| `GET /reports/revenue` (ADMIN) | `/reports/revenue?from=2026-12-01&to=2026-12-31` |
+
+For example, replace `1` with the booking ID returned by `POST /bookings` for
+pickup, return, lookup, and cancellation. The invoice endpoint takes the rental
+ID returned by pickup, not the booking ID.
+
 ---
 
-## 6. Architecture & Clean Code Compliance
+## 7. Architecture & Clean Code Compliance
 
 This project adheres strictly to the **3-Layer Monolithic Architecture** specified in the guidelines:
 ```
