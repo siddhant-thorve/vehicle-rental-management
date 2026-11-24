@@ -6,6 +6,7 @@ from app.db.session import get_db
 from app.schemas.tariff import TariffCreate, TariffResponse
 from app.schemas.common import PaginatedResponse
 from app.services.tariff_service import TariffService
+from app.core.security import require_role
 
 router = APIRouter(prefix="/tariffs", tags=["Tariffs & Pricing"])
 
@@ -14,6 +15,7 @@ router = APIRouter(prefix="/tariffs", tags=["Tariffs & Pricing"])
 def create_tariff(
     req: TariffCreate,
     db: Session = Depends(get_db),
+    _admin=Depends(require_role("ADMIN")),
 ):
     return TariffService.create_tariff(db, req)
 

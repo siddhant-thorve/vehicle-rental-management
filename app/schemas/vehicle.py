@@ -46,6 +46,10 @@ class VehicleCreate(VehicleBase):
     pass
 
 
+class VehicleStatusUpdate(BaseModel):
+    status: VehicleStatus
+
+
 class VehicleResponse(VehicleBase):
     id: int
     status: VehicleStatus

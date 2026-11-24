@@ -1,63 +1,25 @@
-from types import SimpleNamespace
-
 import pytest
+from types import SimpleNamespace
 from pydantic import ValidationError
-
 from app.schemas.auth import CustomerRegisterRequest, UserResponse
 
+def test_customer_registration_accepts_pdf_field_names():
+    r = CustomerRegisterRequest(email="c@e.com", password="secure-password", full_name=" Alex ", phone=" 555-0100 ", licence_no=" LIC-12345 ")
+    assert r.full_name == "Alex" and r.phone == "555-0100" and r.licence_no == "LIC-12345"
 
-def test_customer_registration_accepts_pdf_field_names() -> None:
-    request = CustomerRegisterRequest(
-        email="customer@example.com",
-        password="secure-password",
-        full_name="  Alex Customer  ",
-        phone=" 555-0100 ",
-        licence_no=" LIC-12345 ",
-    )
+def test_customer_registration_accepts_model_licence_attribute_name():
+    assert CustomerRegisterRequest(email="c@e.com", password="secure-password", full_name="A", phone="555", licence_number="LIC-1").licence_no == "LIC-1"
 
-    assert request.full_name == "Alex Customer"
-    assert request.phone == "555-0100"
-    assert request.licence_no == "LIC-12345"
-
-
-def test_customer_registration_accepts_model_licence_attribute_name() -> None:
-    request = CustomerRegisterRequest(
-        email="customer@example.com",
-        password="secure-password",
-        full_name="Alex Customer",
-        phone="555-0100",
-        licence_number="LIC-12345",
-    )
-
-    assert request.licence_no == "LIC-12345"
-
-
-def test_customer_registration_rejects_password_over_bcrypt_byte_limit() -> None:
+def test_customer_registration_rejects_password_over_bcrypt_byte_limit():
     with pytest.raises(ValidationError):
-        CustomerRegisterRequest(
-            email="customer@example.com",
-            password="é" * 37,
-            full_name="Alex Customer",
-            phone="555-0100",
-            licence_no="LIC-12345",
-        )
+        CustomerRegisterRequest(email="c@e.com", password="é" * 37, full_name="A", phone="555", licence_no="L")
+
+def test_user_response_does_not_expose_password_or_raw_licence():
+    u = SimpleNamespace(id=1, full_name="A", email="c@e.com", phone="555", licence_verified=False, role="CUSTOMER", branch_id=None, is_active=True, password_hash="h", licence_number="L")
+    d = UserResponse.model_validate(u).model_dump()
+    assert "password_hash" not in d and "licence_number" not in d
 
 
-def test_user_response_does_not_expose_password_or_raw_licence() -> None:
-    user = SimpleNamespace(
-        id=1,
-        full_name="Alex Customer",
-        email="customer@example.com",
-        phone="555-0100",
-        licence_verified=False,
-        role="CUSTOMER",
-        branch_id=None,
-        is_active=True,
-        password_hash="not-for-response",
-        licence_number="LIC-12345",
-    )
 
-    response = UserResponse.model_validate(user)
 
-    assert "password_hash" not in response.model_dump()
-    assert "licence_number" not in response.model_dump()
+

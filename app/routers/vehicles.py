@@ -3,9 +3,11 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.vehicle import VehicleCreate, VehicleResponse
+from app.schemas.vehicle import VehicleCreate, VehicleResponse, VehicleStatusUpdate
 from app.schemas.common import PaginatedResponse
 from app.services.vehicle_service import VehicleService
+from app.core.security import require_role, get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/vehicles", tags=["Vehicles"])
 
@@ -14,6 +16,7 @@ router = APIRouter(prefix="/vehicles", tags=["Vehicles"])
 def create_vehicle(
     req: VehicleCreate,
     db: Session = Depends(get_db),
+    _admin=Depends(require_role("ADMIN")),
 ):
     return VehicleService.create_vehicle(db, req)
 
@@ -40,3 +43,14 @@ def list_vehicles(
         sort_dir=sort_dir,
     )
     return PaginatedResponse(items=items, total=total, page=page, size=size)
+
+
+@router.patch("/{id}/status", response_model=VehicleResponse)
+def update_vehicle_status(
+    id: int,
+    req: VehicleStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    _staff=Depends(require_role("BRANCH_STAFF")),
+):
+    return VehicleService.update_vehicle_status(db, id, req, current_user)
