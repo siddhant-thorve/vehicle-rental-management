@@ -1,0 +1,11 @@
+Booking Service Alembic commands
+
+Run commands from the booking-service directory:
+
+  python -m alembic -c alembic/alembic.ini current
+  python -m alembic -c alembic/alembic.ini revision --autogenerate -m "describe change"
+  python -m alembic -c alembic/alembic.ini upgrade head
+
+The database URL is read from this service's .env through app.core.config.
+Review every generated revision before applying it.
+The first revision creates tables and is intended for a new empty database.
