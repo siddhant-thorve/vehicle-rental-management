@@ -40,6 +40,8 @@ The API Gateway (`http://127.0.0.1:8000`) routes requests to these services:
 3. **API Gateway on Port 8000:**
    - Evaluator/client interacts with a single unified port `8000`.
    - Aggregated Swagger UI documentation at `http://127.0.0.1:8000/docs`.
+   - Gateway routes are declared explicitly in `api-gateway/gateway/auth_routes.py`, `fleet_routes.py`, `catalog_routes.py`, `booking_routes.py`, and `operations_routes.py`. Each route forwards the request to its service using the shared helper in `gateway/proxy_utils.py`; the gateway does not use a catch-all route.
+   - Internal service-to-service endpoints are called directly between services and are not exposed through the gateway.
 
 ---
 
